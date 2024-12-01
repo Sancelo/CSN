@@ -1,0 +1,151 @@
+﻿@page "/lich"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.SignalR.Client
+@using Microsoft.EntityFrameworkCore
+@using CSN.Models
+@using Radzen
+@using Radzen.Blazor
+@inject dbCSNChatContext dbcontext
+@inject NavigationManager Navigation
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+<PageTitle>Kế hoạch</PageTitle>
+
+<RadzenLayout>
+    <RadzenHeader Style="background: linear-gradient(to right, #54A2FF, #637CFF, #768BFF);">
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0">
+            <RadzenSidebarToggle Click="@(() => sidebarExpanded = !sidebarExpanded)" />
+            <RadzenLabel Text="C500 Social Network" />
+        </RadzenStack>
+    </RadzenHeader>
+
+    <RadzenSidebar Responsive="false" Style="width: max-content">
+        <RadzenPanelMenu DisplayStyle="@(sidebarExpanded ? MenuItemDisplayStyle.IconAndText : MenuItemDisplayStyle.Icon)" ShowArrow="false">
+            <RadzenPanelMenuItem Text="Home" Icon="home" Path="home" />
+            <RadzenPanelMenuItem Text="Phòng chat" Icon="chrome_reader_mode" Path="room" />
+            <RadzenPanelMenuItem Text="Bạn bè" Icon="assignment_ind">
+                <RadzenPanelMenuItem Text="Danh sách bạn bè" Path="friend" Icon="list" />
+                <RadzenPanelMenuItem Text="Thêm bạn bè" Path="friend" Icon="check_circle" />
+                <RadzenPanelMenuItem Text="Thông tin" Path="card" Icon="line_style" />
+            </RadzenPanelMenuItem>
+            <RadzenPanelMenuItem Text="Cloud" Icon="account_balance_wallet">
+                <RadzenPanelMenuItem Text="Văn bản" Path="text" Icon="assignment" />
+                <RadzenPanelMenuItem Text="Ảnh" Path="panel" Icon="perm_media" />
+                <RadzenPanelMenuItem Text="File" Path="fieldset" Icon="attach_file" />
+            </RadzenPanelMenuItem>
+            <RadzenPanelMenuItem Text="Kế hoạch" Icon="assessment" Path="lich" />
+            <div class="rz-p-4" style="height: 450px;"></div> <!-- Tạo khoảng trống lớn hơn -->
+            <RadzenPanelMenuItem Text="Đăng xuất" Path="" Icon="exit_to_app" style="color: red !important;" />
+        </RadzenPanelMenu>
+    </RadzenSidebar>
+
+    <RadzenBody Style="padding:0px; height: 100vh; overflow-y: auto;">
+        <RadzenScheduler @ref=@scheduler SlotRender=@OnSlotRender style="height: 768px;" TItem="Appointment" Data=@appointments StartProperty="Start" EndProperty="End"
+        TextProperty="Text" SelectedIndex="2"
+        SlotSelect=@OnSlotSelect AppointmentSelect=@OnAppointmentSelect AppointmentRender=@OnAppointmentRender
+        AppointmentMove=@OnAppointmentMove>
+            <RadzenDayView />
+            <RadzenWeekView />
+            <RadzenMonthView />
+        </RadzenScheduler>
+    </RadzenBody>
+</RadzenLayout>
+
+@code {
+    RadzenScheduler<Appointment> scheduler;
+    Dictionary<DateTime, string> events = new Dictionary<DateTime, string>();
+    IList<Appointment> appointments = new List<Appointment>();
+
+    // Lấy dữ liệu cuộc hẹn từ cơ sở dữ liệu khi trang được tải
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        appointments = await dbcontext.Appointments.ToListAsync();
+    }
+   
+    void OnSlotRender(SchedulerSlotRenderEventArgs args)
+    {
+        // Highlight today in month view
+        if (args.View.Text == "Month" && args.Start.Date == DateTime.Today)
+        {
+            args.Attributes["style"] = "background: var(--rz-scheduler-highlight-background-color, rgba(255,220,40,.2));";
+        }
+
+        // Highlight working hours (9-18)
+        if ((args.View.Text == "Week" || args.View.Text == "Day") && args.Start.Hour > 8 && args.Start.Hour < 19)
+        {
+            args.Attributes["style"] = "background: var(--rz-scheduler-highlight-background-color, rgba(255,220,40,.2));";
+        }
+    }
+
+    async Task OnSlotSelect(SchedulerSlotSelectEventArgs args)
+    {
+        Console.WriteLine($"SlotSelect: Start={args.Start} End={args.End}");
+
+        if (args.View.Text != "Year")
+        {
+            Appointment data = await DialogService.OpenAsync<AddAppointmentPage>("Add Appointment",
+                new Dictionary<string, object> { { "Start", args.Start }, { "End", args.End } });
+
+            if (data != null)
+            {
+                appointments.Add(data);
+                // Either call the Reload method or reassign the Data property of the Scheduler
+                await scheduler.Reload();
+            }
+        }
+    }
+
+    async Task OnAppointmentSelect(SchedulerAppointmentSelectEventArgs<Appointment> args)
+    {
+        Console.WriteLine($"AppointmentSelect: Appointment={args.Data.Text}");
+
+        var copy = new Appointment
+            {
+                TextId = args.Data.TextId,  // Đảm bảo bạn truyền đúng ID vào
+                Start = args.Data.Start,
+                End = args.Data.End,
+                Text = args.Data.Text
+            };
+
+        var data = await DialogService.OpenAsync<EditAppointmentPage>("Edit Appointment",
+            new Dictionary<string, object> { { "Appointment", copy } });
+
+        if (data != null)
+        {
+            // Cập nhật lại cuộc hẹn sau khi sửa
+            args.Data.Start = data.Start;
+            args.Data.End = data.End;
+            args.Data.Text = data.Text;
+        }
+
+        await scheduler.Reload();
+    }
+
+
+    void OnAppointmentRender(SchedulerAppointmentRenderEventArgs<Appointment> args)
+    {
+        // Never call StateHasChanged in AppointmentRender - would lead to infinite loop
+
+        if (args.Data.Text == "Birthday")
+        {
+            args.Attributes["style"] = "background: red";
+        }
+    }
+
+    async Task OnAppointmentMove(SchedulerAppointmentMoveEventArgs args)
+    {
+        var draggedAppointment = appointments.FirstOrDefault(x => x == args.Appointment.Data);
+
+        if (draggedAppointment != null)
+        {
+            draggedAppointment.Start = draggedAppointment.Start + args.TimeSpan;
+
+            draggedAppointment.End = draggedAppointment.End + args.TimeSpan;
+
+            await scheduler.Reload();
+        }
+    }
+
+    bool sidebarExpanded = false;
+}

@@ -1,0 +1,628 @@
+﻿@page "/room"
+@using CSN.Models
+@inject dbCSNChatContext dbcontext
+@inject NavigationManager Navigation
+@inject NotificationService NotificationService
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.SignalR.Client
+@using Microsoft.EntityFrameworkCore
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+<PageTitle>Danh sách phòng</PageTitle>
+
+<RadzenLayout>
+    <RadzenHeader Style="background: linear-gradient(to right, #54A2FF, #637CFF, #768BFF);">
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0">
+            <RadzenSidebarToggle Click="@(() => sidebarExpanded = !sidebarExpanded)" />
+            <RadzenLabel Text="C500 Social NetWork" />
+        </RadzenStack>
+    </RadzenHeader>
+    <RadzenSidebar Responsive="false" Style="width: max-content">
+        <RadzenPanelMenu DisplayStyle="@(sidebarExpanded ? MenuItemDisplayStyle.IconAndText : MenuItemDisplayStyle.Icon)" ShowArrow="false">
+            <RadzenPanelMenuItem Text="Home" Icon="home" Path="home" />
+
+            <RadzenPanelMenuItem Text="Phòng chat" Icon="chrome_reader_mode" Path="room" />
+
+            <RadzenPanelMenuItem Text="Bạn bè" Icon="assignment_ind">
+                <RadzenPanelMenuItem Text="Danh sách bạn bè" Path="friend" Icon="list" />
+                <RadzenPanelMenuItem Text="Thêm bạn bè" Path="friend" Icon="check_circle" />
+                <RadzenPanelMenuItem Text="Thông tin" Path="card" Icon="line_style" />
+            </RadzenPanelMenuItem>
+
+            <RadzenPanelMenuItem Text="Cloud" Icon="account_balance_wallet">
+                <RadzenPanelMenuItem Text="Văn bản" Path="text" Icon="assignment" />
+                <RadzenPanelMenuItem Text="Ảnh" Path="panel" Icon="perm_media" />
+                <RadzenPanelMenuItem Text="File" Path="fieldset" Icon="attach_file" />
+            </RadzenPanelMenuItem>
+            <RadzenPanelMenuItem Text="Kế hoạch" Icon="assessment" Path="lich" />
+            <div class="rz-p-4" style="height: 450px;"></div> <!-- Tạo khoảng trống lớn hơn -->
+
+            <RadzenPanelMenuItem Text="Đăng xuất" Path="" Icon="exit_to_app" style="color: red !important;" />
+        </RadzenPanelMenu>
+    </RadzenSidebar>
+
+    <RadzenBody Style="padding:0px; height: 100vh; overflow-y: auto;">
+        <div style="display: flex; height: 100vh;">
+            <!-- Khu vực danh sách phòng -->
+            <div class="RadzenBody" style="width: 30%; border-right: 1px solid #ddd; height: 100vh; overflow-y: auto; ">
+                <!-- Nội dung danh sách phòng -->
+                <div class="col-md-6" style="display: flex; align-items: center; justify-content: space-between; padding:20px 10px 10px 10px; width:auto; background-color:#7AC8FB;">
+                    <!-- Thanh tìm kiếm -->
+                    <div style="flex:1; position: relative;">
+                        <input type="text" class="form-control"
+                               aria-label="Search Rooms"
+                               placeholder="Tìm kiếm phòng..."
+                               @bind="searchText"
+                               style="padding:10px; width: 100%; max-width: 600px; border-radius: 5px; border: 1px solid #ddd; padding-left: 35px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                             class="bi bi-search" viewBox="0 0 16 16"
+                             style="position: absolute; top: 50%; left: 10px; transform: translateY(-50%); color: #999;">
+                            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"></path>
+                        </svg>
+                    </div>
+
+                    <!-- Icon thêm -->
+                    <i class="bi bi-plus-lg" style="cursor: pointer; font-size: 20px; margin-left: 10px; color:aliceblue;" @onclick="() => showCreateRoomBox = true"></i>
+                </div>
+
+                <!-- Box tạo phòng -->
+                @if (showCreateRoomBox)
+                {
+                    <div class="overlay" @onclick="() => showCreateRoomBox = false"></div> <!-- Nền mờ khi nhấn để tắt hộp -->
+
+                    <div class="create-room-box">
+                        <!-- Icon đóng box -->
+                        <i class="bi bi-x-lg" style="position: absolute; top: 10px; right: 10px; cursor: pointer;" @onclick="() => showCreateRoomBox = false"></i>
+
+                        <h3 style="margin-bottom: 20px; text-align: center;">Tạo phòng mới</h3>
+                        <div>
+                            <label for="roomName">Tên phòng:</label>
+                            <RadzenTextBox @bind-Value="room.RoomName" Placeholder="Nhập tên phòng"
+                                           style="padding: 10px; width: 100%; border-radius: 5px; border: 1px solid #ddd;" />
+                        </div>
+                        <div style="margin-top: 10px;">
+                            <label for="roomPassword">Mật khẩu:</label>
+                            <RadzenTextBox @bind-Value="room.Password" Placeholder="Nhập mật khẩu"
+                                           Password="true"
+                                           style="padding: 10px; width: 100%; border-radius: 5px; border: 1px solid #ddd;" />
+                        </div>
+                        <p style="font-size:12px; color:brown; margin-top:5px;"> có thể để trống nếu phòng không cần mật khẩu</p>
+                        <div style="margin-top: 20px;">
+                            <RadzenButton Click="Them" Text="Tạo" ButtonStyle="ButtonStyle.Primary"
+                                          style="background-color: #7a4eff; color: white; border-radius: 5px; padding: 10px 20px; margin-top: 10px;" />
+                        </div>
+                    </div>
+                }
+
+
+                <div style="height: 720px ; overflow-y: auto; background-color:#7AC8FB; padding-left:3px;">
+                    <RadzenDataGrid @ref="roomsGrid" AllowAlternatingRows="true" AllowFiltering="true" AllowSorting="true" Data="@FilteredRooms" TItem="tbRoom" ColumnWidth="200px"
+                                    style="box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); border-radius: 10px;">
+                        <Columns>
+                            <RadzenDataGridColumn Property="RoomName" Title="Tên Phòng" TextAlign="TextAlign.Left" Width="auto">
+                                <Template Context="room">
+                                    <div style="display: flex;">
+                                        <!-- Room item chứa tên phòng và icon -->
+                                        <div class="room-item" @onclick="() => JoinRoom(room.RoomId)" style="display: flex; width: 90%; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #ccc;">
+                                            <!-- Icon của phòng -->
+                                            <i class="bi bi-chat-dots" style="color: #007bff; font-size: 20px; margin-right: 10px;"></i>
+
+                                            <!-- Tên phòng -->
+                                            <div class="room-name" style="flex-grow: 1; text-align: left;">
+                                                @room.RoomName
+                                            </div>
+                                        </div>
+
+                                        <!-- Room options nằm ngoài room-item, căn phải -->
+                                        <div class="room-options" style="display: flex; width: 10%; justify-content: flex-end; align-items: center; padding: 0 10px;">
+                                            <i class="bi bi-box-arrow-right" style="color: darkred; font-size: 20px;" alt="Rời khỏi nhóm" @onclick="() => showOutRoomBox = true"></i>
+                                        </div>
+
+                                        <!-- Nếu hiển thị hộp xác nhận "Rời nhóm" -->
+                                        @if (showOutRoomBox)
+                                        {
+                                            <div class="overlay"></div> <!-- Nền mờ -->
+                                            <div class="password-box">
+                                                <h3>Xác nhận</h3>
+                                                <RadzenButton Click="Xoa" Text="Rời nhóm" ButtonStyle="ButtonStyle.Primary" />
+                                                <RadzenButton Click="@(() => showOutRoomBox = false)" Text="Hủy" ButtonStyle="ButtonStyle.Danger" />
+                                            </div>
+                                        }
+                                    </div>
+                                </Template>
+                            </RadzenDataGridColumn>
+                        </Columns>
+                    </RadzenDataGrid>
+                </div>
+                @if (showPasswordBox)
+                {
+                    <div class="overlay"></div> <!-- Nền mờ -->
+                    <div class="password-box">
+                        <h3>Nhập mật khẩu</h3>
+                        <RadzenTextBox @bind-Value="enteredPassword" Placeholder="Nhập mật khẩu" />
+                        <RadzenButton Click="CheckPassword" Text="Xác nhận" ButtonStyle="ButtonStyle.Primary" />
+                        <RadzenButton Click="@(() => showPasswordBox = false)" Text="Hủy" ButtonStyle="ButtonStyle.Danger" />
+                    </div>
+                }
+
+            </div>
+
+            <!-- Phần chữ và carousel -->
+            <div style="width: 70%; display: flex; flex-direction: column; align-items: center; padding: 20px;">
+                <!-- Phần chữ -->
+                <div style="text-align: center; font-size: 22px; margin-bottom: 20px;">
+                    <p>Chào mừng đến với C500 Social NetWork!</p>
+                    <br />
+                    <p style="font-size: 16px; margin-top: -25px;">Khám phá những tiện ích hỗ trợ làm việc và trò chuyện cùng <br /> người thân, bạn bè được tối ưu hoá cho máy tính của bạn</p>
+                </div>
+
+                <!-- Phần carousel -->
+                <div id="carouselExampleControls" class="carousel slide" data-bs-ride="carousel">
+                    <!-- Indicators -->
+                    <div class="carousel-indicators">
+                        <button type="button" data-bs-target="#carouselExampleControls" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+                        <button type="button" data-bs-target="#carouselExampleControls" data-bs-slide-to="1" aria-label="Slide 2"></button>
+                        <button type="button" data-bs-target="#carouselExampleControls" data-bs-slide-to="2" aria-label="Slide 3"></button>
+                        <button type="button" data-bs-target="#carouselExampleControls" data-bs-slide-to="3" aria-label="Slide 4"></button>
+                        <button type="button" data-bs-target="#carouselExampleControls" data-bs-slide-to="4" aria-label="Slide 5"></button>
+                    </div>
+
+                    <!-- Wrapper for slides -->
+                    <div class="carousel-inner">
+                        <div class="carousel-item active">
+                            <img src="/images/js.png" class="d-block w-100" alt="...">
+                        </div>
+                        <div class="carousel-item">
+                            <img src="/images/js2.png" class="d-block w-100" alt="...">
+                        </div>
+                        <div class="carousel-item">
+                            <img src="/images/js3.png" class="d-block w-100" alt="...">
+                        </div>
+                        <div class="carousel-item">
+                            <img src="/images/js1.png" class="d-block w-100" alt="...">
+                        </div>
+                        <div class="carousel-item">
+                            <img src="/images/js4.png" class="d-block w-100" alt="...">
+                        </div>
+                    </div>
+
+                    <!-- Left and right controls -->
+                    <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleControls" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleControls" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
+                </div>
+            </div>
+        
+            <style>
+                .carousel {
+                    height: 500px;
+                    position: relative;
+                }
+
+                .carousel-inner img {
+                    width: 100%;
+                    max-height: 400px;
+                    object-fit: contain;
+                    margin: 0 auto;
+                }
+
+                /* Đổi màu nút Previous và Next */
+                .carousel-control-prev-icon,
+                .carousel-control-next-icon {
+                    background-color: #1e90ff; /* Màu xanh nước biển */
+                    border-radius: 50%; /* Tạo hình tròn */
+                    width: 50px !important;
+                    height: 50px !important;
+                    background-size: 30px 30px !important; /* Điều chỉnh kích thước icon bên trong nút */
+                }
+
+                    .carousel-control-prev-icon:hover,
+                    .carousel-control-next-icon:hover {
+                        background-color: #4682b4; /* Màu xanh đậm khi hover */
+                    }
+
+                .carousel-control-prev,
+                .carousel-control-next {
+                    width: 4% !important; /* Điều chỉnh khoảng cách giữa các nút và carousel */
+                    margin-top: 0; /* Đảm bảo nút ở vị trí chính giữa theo chiều dọc */
+                }
+
+                .carousel-indicators button {
+                    background-color: #1e90ff !important; /* Màu xanh nước biển cho các dấu gạch dưới */
+                }
+
+                    .carousel-indicators button:hover {
+                        background-color: #4682b4 !important; /* Màu xanh đậm khi hover */
+                    }
+
+                .carousel-indicators .active {
+                    background-color: #ff5733 !important; /* Màu chữ khi dấu gạch dưới đang được chọn */
+                }
+
+                .carousel-indicators {
+                    position: absolute;
+                    bottom: 20px;
+                }
+            </style>
+        </div>
+    </RadzenBody>
+</RadzenLayout>
+
+<style>
+    .room-item {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 50px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 500;
+        background-color: transparent;
+        transition: background-color 0.2s ease-in-out;
+    }
+
+        .room-item:hover {
+            background-color: #f0f0f0;
+        }
+
+        .room-item:active {
+            background-color: #dcdcdc;
+        }
+    /* Định dạng các phần tử trong giao diện */
+    .room-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background-color: white;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 5px;
+    }
+
+    .active-dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-left: 5px;
+    }
+
+    .chat-container {
+        width: 100%;
+        height: 580px;
+        border-radius: 5px;
+        background: linear-gradient(to bottom, #C3C7F4, #C8A8E9, #E3AADD, #FBBCBA, #F2DDDC, #F4E7EB);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .create-room-box {
+        position: fixed; /* Đảm bảo hộp được cố định trên màn hình */
+        top: 50%; /* Căn giữa theo chiều dọc */
+        left: 50%; /* Căn giữa theo chiều ngang */
+        transform: translate(-50%, -50%); /* Đẩy hộp vào đúng trung tâm màn hình */
+        background-color: #ffffff; /* Màu nền trắng */
+        padding: 30px; /* Khoảng cách bên trong hộp */
+        border-radius: 12px; /* Bo tròn góc mềm mại */
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Bóng đổ mờ cho hộp */
+        z-index: 1000; /* Đảm bảo hộp nổi lên trên các phần tử khác */
+        width: 400px; /* Chiều rộng hộp lớn hơn */
+        max-width: 80%; /* Đảm bảo không quá rộng khi màn hình nhỏ */
+        box-sizing: border-box; /* Đảm bảo padding không làm thay đổi kích thước hộp */
+        transition: transform 0.3s ease-in-out; /* Thêm hiệu ứng khi hộp xuất hiện */
+    }
+
+    .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5); /* Nền mờ */
+        z-index: 999; /* Đặt lớp nền mờ phía dưới hộp */
+        transition: opacity 0.3s ease-in-out; /* Hiệu ứng mờ nền */
+    }
+
+    .create-room-box button {
+        background-color: #4CAF50; /* Màu nền xanh lá */
+        color: white; /* Chữ trắng */
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background-color 0.3s ease; /* Hiệu ứng chuyển màu khi hover */
+    }
+
+        .create-room-box button:hover {
+            background-color: #45a049; /* Màu khi hover */
+        }
+
+    .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+    }
+
+    .password-box {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        z-index: 1100;
+    }
+
+        .password-box h3 {
+            margin-bottom: 15px;
+        }
+</style>
+
+@code {
+    private HubConnection? hubConnection;
+    private List<string> messages = [];
+    private string? User;
+    private string? Content;
+    tbMsg tinnhan = new tbMsg();
+    RadzenDataGrid<tbMsg> tinnhansGrid;
+    private List<tbMsg> tinnhans = new List<tbMsg>();
+    private string RoomName { get; set; } = "Đang tải...";
+    [Parameter] public int RoomId { get; set; }
+    private ElementReference messageListRef;
+    private List<tbRoom> Rooms = new();
+    RadzenDataGrid<tbRoom> roomsGrid;
+    tbRoom room = new tbRoom();
+    private string searchText = "";
+    private bool isCreateRoomFormVisible = false;
+    private bool showCreateRoomBox = false;
+    private bool showPasswordBox = false;
+    private bool showOutRoomBox = false;
+    private string enteredPassword = string.Empty;
+    private tbRoom selectedRoom;
+
+    private void ToggleCreateRoomForm()
+    {
+        // Chuyển trạng thái hiển thị form tạo phòng
+        isCreateRoomFormVisible = !isCreateRoomFormVisible;
+    }
+    // Lọc danh sách phòng dựa trên searchText
+    private IEnumerable<tbRoom> FilteredRooms => Rooms
+        .Where(room => string.IsNullOrEmpty(searchText) ||
+                       room.RoomName.Contains(searchText, StringComparison.OrdinalIgnoreCase));
+
+    // Hàm tải lại danh sách phòng (nếu cần)
+    private async Task RefreshRooms()
+    {
+        Rooms = await dbcontext.Rooms.OrderBy(c => c.RoomId).ToListAsync();
+        StateHasChanged(); // Cập nhật giao diện
+    }
+
+    private void JoinRoom(int roomId)
+    {
+        selectedRoom = dbcontext.Rooms.FirstOrDefault(r => r.RoomId == roomId);
+
+        if (selectedRoom != null && !string.IsNullOrEmpty(selectedRoom.Password))
+        {
+            // Hiển thị hộp thoại nhập mật khẩu
+            showPasswordBox = true;
+        }
+        else
+        {
+            // Vào phòng không cần mật khẩu
+            Navigation.NavigateTo($"/chat/{roomId}");
+        }
+    }
+
+    private void CheckPassword()
+    {
+        if (selectedRoom != null && selectedRoom.Password == enteredPassword)
+        {
+            // Mật khẩu đúng, vào phòng
+            showPasswordBox = false;
+            Navigation.NavigateTo($"/chat/{selectedRoom.RoomId}");
+        }
+        else
+        {
+            // Mật khẩu sai
+            NotificationService.Notify(NotificationSeverity.Error, "Sai mật khẩu", "Vui lòng thử lại!");
+        }
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Rooms = await dbcontext.Rooms.OrderBy(c => c.RoomId).ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Lỗi", "Không thể tải phòng: " + ex.Message);
+        }
+        try
+        {
+            var room = await dbcontext.Rooms.FirstOrDefaultAsync(r => r.RoomId == RoomId);
+            RoomName = room?.RoomName ?? "Không xác định";
+
+            hubConnection = new HubConnectionBuilder()
+                .WithUrl(Navigation.ToAbsoluteUri("/chathub"))
+                .Build();
+
+            hubConnection.On<string, string>("ReceiveMessage", (user, message) =>
+            {
+                tinnhans.Add(new tbMsg { User = user, Content = message });
+                InvokeAsync(() =>
+                {
+                    StateHasChanged();
+                    ScrollToBottom();  // Cuộn xuống sau khi có tin nhắn mới
+                }); // Đảm bảo giao diện cập nhật ngay
+            });
+
+            await hubConnection.StartAsync();
+            await hubConnection.SendAsync("JoinRoom", RoomId);
+
+            // Chỉ tải tin nhắn của Room hiện tại
+            tinnhans = await dbcontext.Msgs
+                .Where(msg => msg.RoomId == RoomId)
+                .OrderBy(msg => msg.MsgId)
+                .ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Lỗi", $"Không thể tải thông tin phòng: {ex.Message}");
+        }
+    }
+
+    private async Task ScrollToBottom()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("scrollToBottom", messageListRef); // Gọi hàm JavaScript
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error scrolling to bottom: {ex.Message}");
+        }
+    }
+
+
+
+    private async Task Send()
+    {
+        if (hubConnection is not null)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(tinnhan.User) || string.IsNullOrWhiteSpace(tinnhan.Content))
+                {
+                    NotificationService.Notify(NotificationSeverity.Error, "Thông báo", "Tên và nội dung không thể để trống!");
+                    return;
+                }
+
+                // Gửi tin nhắn ngay lập tức qua SignalR
+                await hubConnection.SendAsync("SendMessage", tinnhan.User, tinnhan.Content, RoomId);
+
+                // Sau đó lưu tin nhắn vào cơ sở dữ liệu
+                var newMessage = new tbMsg
+                    {
+                        User = tinnhan.User,
+                        Content = tinnhan.Content,
+                        RoomId = RoomId
+                    };
+                dbcontext.Msgs.Add(newMessage);
+                await dbcontext.SaveChangesAsync();
+
+                tinnhan.Content = string.Empty;
+                InvokeAsync(StateHasChanged); // Cập nhật giao diện
+                InvokeAsync(ScrollToBottom);
+            }
+            catch (Exception ex)
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "Lỗi", $"Đã có lỗi xảy ra: {ex.Message}");
+            }
+        }
+    }
+    private async Task Them()
+    {
+        if (string.IsNullOrWhiteSpace(room.RoomName))
+        {
+            // Hiển thị thông báo lỗi nếu tên phòng trống
+            NotificationService.Notify(NotificationSeverity.Error, "Lỗi", "Tên phòng không được để trống!");
+            return;
+        }
+
+        // Thêm phòng mới vào cơ sở dữ liệu
+        dbcontext.Rooms.Add(room);
+        await dbcontext.SaveChangesAsync();
+
+        // Reset lại trạng thái và đóng hộp tạo phòng
+        room = new tbRoom();
+        showCreateRoomBox = false;
+
+        // Tải lại danh sách phòng
+        Rooms = await dbcontext.Rooms.ToListAsync();
+
+        // Hiển thị thông báo thành công
+        NotificationService.Notify(NotificationSeverity.Success, "Thành công", "Phòng đã được tạo!");
+    }
+
+    private async Task Xoa()
+    {
+        // Tìm nhóm hiện tại trong cơ sở dữ liệu
+        var room = await dbcontext.Rooms.FirstOrDefaultAsync(r => r.RoomId == RoomId);
+
+        if (room != null)
+        {
+            try
+            {
+                // Xóa tất cả tin nhắn liên quan đến phòng
+                var messages = dbcontext.Msgs.Where(m => m.RoomId == RoomId);
+                dbcontext.Msgs.RemoveRange(messages);
+
+                // Xóa phòng
+                dbcontext.Rooms.Remove(room);
+
+                // Lưu thay đổi vào cơ sở dữ liệu
+                await dbcontext.SaveChangesAsync();
+
+                // Thông báo thành công
+                NotificationService.Notify(NotificationSeverity.Success, "Thành công", "Phòng và tin nhắn đã được xóa!");
+
+                // Điều hướng người dùng về trang danh sách phòng
+                Navigation.NavigateTo("/room");
+            }
+            catch (Exception ex)
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "Lỗi", $"Không thể xóa phòng: {ex.Message}");
+            }
+        }
+        else
+        {
+            NotificationService.Notify(NotificationSeverity.Warning, "Cảnh báo", "Phòng không tồn tại hoặc đã bị xóa!");
+        }
+    }
+
+
+    public bool IsConnected =>
+        hubConnection?.State == HubConnectionState.Connected;
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+
+    bool sidebarExpanded = false;
+
+
+    void OnParentClicked(MenuItemEventArgs args)
+    {
+
+    }
+
+    void OnChildClicked(MenuItemEventArgs args)
+    {
+
+    }
+
+    void NavigateToRoom()
+    {
+        Navigation.NavigateTo("/home");
+    }
+
+}

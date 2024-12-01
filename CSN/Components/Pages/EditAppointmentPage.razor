@@ -1,0 +1,79 @@
+﻿@rendermode InteractiveServer
+@using Microsoft.AspNetCore.SignalR.Client
+@using Microsoft.EntityFrameworkCore
+@using CSN.Models
+@using Radzen
+@using Radzen.Blazor
+@inject dbCSNChatContext dbcontext
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+
+<RadzenTemplateForm TItem="Appointment" Data="@model" Submit=@OnSubmit>
+    <RadzenStack Gap="1rem">
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Wrap="FlexWrap.Wrap">
+            <RadzenLabel Text="Title" Style="width: 6rem;" />
+            <RadzenTextBox @bind-Value="@model.Text" Name="Text" Style="width: 12rem;" />
+            <RadzenRequiredValidator Component="Text" Text="Title is required" />
+        </RadzenStack>
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Wrap="FlexWrap.Wrap">
+            <RadzenLabel Text="Start" Style="width: 6rem;" />
+            <RadzenDatePicker @bind-Value="@model.Start" Name="Start" ShowTime="true" Style="width: 12rem;" />
+            <RadzenRequiredValidator Component="Start" Text="Start is required" />
+        </RadzenStack>
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Wrap="FlexWrap.Wrap">
+            <RadzenLabel Text="End" Style="width: 6rem;" />
+            <RadzenDatePicker Name="End" @bind-Value="@model.End" ShowTime="true" Style="width: 12rem;" />
+            <RadzenRequiredValidator Component="End" Text="End is required" />
+        </RadzenStack>
+        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
+            <RadzenButton ButtonType="ButtonType.Submit" Text="Save" />
+        </RadzenStack>
+    </RadzenStack>
+</RadzenTemplateForm>
+
+@code {
+    [Parameter]
+    public Appointment Appointment { get; set; }
+
+    Appointment model = new Appointment();
+
+    protected override void OnParametersSet()
+    {
+        model = Appointment;  // Nhận giá trị từ tham số và gán vào model
+    }
+
+    async Task OnSubmit(Appointment model)
+    {
+        // Kiểm tra nếu Appointment đã có ID
+        var existingAppointment = await dbcontext.Appointments.FindAsync(model.TextId);
+
+        if (existingAppointment != null)
+        {
+            // Cập nhật cuộc hẹn hiện tại trong cơ sở dữ liệu
+            existingAppointment.Text = model.Text;
+            existingAppointment.Start = model.Start;
+            existingAppointment.End = model.End;
+
+            dbcontext.Appointments.Update(existingAppointment);
+        }
+        else
+        {
+            // Nếu không tìm thấy cuộc hẹn, thì thêm mới
+            dbcontext.Appointments.Add(model);
+        }
+
+        await dbcontext.SaveChangesAsync(); // Lưu thay đổi vào cơ sở dữ liệu
+
+        // Đóng dialog sau khi cập nhật thành công
+        DialogService.Close(model);
+
+        // Hiển thị thông báo thành công
+        NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Thành công",
+                Detail = "Kế hoạch đã được thay đổi."
+            });
+    }
+
+}

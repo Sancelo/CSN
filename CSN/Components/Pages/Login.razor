@@ -1,0 +1,101 @@
+﻿@page "/"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.SignalR.Client
+@using Microsoft.EntityFrameworkCore
+@using CSN.Models
+@using Radzen
+@using Radzen.Blazor
+@inject dbCSNChatContext dbcontext
+@inject NavigationManager Navigation
+@inject NotificationService NotificationService
+@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+<PageTitle>Đăng nhập</PageTitle>
+
+<style>
+    /* CSS để ẩn sidebar và điều chỉnh bố cục cho trang đăng nhập */
+    .sidebar, .topbar {
+        display: none;
+    }
+
+    .main-content {
+        margin-left: 0; /* Loại bỏ khoảng trống để sidebar */
+        width: auto;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .login-background {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: url('images/nenlogin.jpg'); /* Đường dẫn đến hình ảnh */
+        background-size: cover;
+        background-position: center;
+        opacity: 0.75; /* Độ mờ của hình ảnh */
+        z-index: -1; /* Để hình ảnh ở phía sau nội dung */
+    }
+</style>
+
+<div class="main-content">
+    <div class="login-background"></div>
+    <RadzenCard class="rz-my-12 rz-mx-auto rz-p-4 rz-p-md-12" style="max-width:600px; border: 2px solid #007BFF; border-radius: 10px; box-shadow: 0 4px 15px rgba(0, 123, 255, 0.2);">
+        <h3 style="text-align: center; color: #007BFF; font-family: Arial, sans-serif;">ĐĂNG NHẬP</h3>
+        <RadzenTemplateForm Data=@userlogin>
+            <RadzenLogin AllowRegister="true" AllowResetPassword="true"
+                         Email=@userlogin.Email Mật Khẩu=@userlogin.PassWord
+                         AllowRememberMe="true" RememberMe="@rememberMe"
+                         Login=@(args => OnLogin(args))
+                         ResetPassword=@(args => OnResetPassword())
+                         Register=@(args => OnRegister()) />
+        </RadzenTemplateForm>
+
+        <p style="text-align: center; color: @(statusMessage == "Đăng nhập thành công!" ? "green" : "red"); font-family: Arial, sans-serif; font-size: 18px; margin-top:10px;">@statusMessage</p>
+    </RadzenCard>
+</div>
+
+@code {
+    bool rememberMe = false;
+    string statusMessage = ""; // Biến để lưu trạng thái đăng nhập
+    tbUser userlogin = new tbUser();
+
+    async Task OnLogin(LoginArgs args)
+    {
+        try
+        {
+            // Kiểm tra tài khoản
+            var user = await dbcontext.Users.FirstOrDefaultAsync(u => u.Email == args.Username && u.PassWord == args.Password);
+            
+            if (user != null)
+            {
+                statusMessage = "Đăng nhập thành công!";
+                // Lưu tên người dùng vào SessionStorage
+                await sessionStorage.SetItemAsync("UserName", user.UserName);
+                Navigation.NavigateTo("/home");
+            }
+            else
+            {
+                statusMessage = "Đăng nhập không thành công. Vui lòng kiểm tra lại thông tin.";
+            }
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"Lỗi khi kết nối: {ex.Message}";
+        }
+    }
+
+    void OnRegister()
+    {
+        // Điều hướng đến trang đăng ký
+        Navigation.NavigateTo("/register");
+    }
+
+    void OnResetPassword()
+    {
+        // Điều hướng đến trang đặt lại mật khẩu
+        Navigation.NavigateTo("/reset");
+    }
+}

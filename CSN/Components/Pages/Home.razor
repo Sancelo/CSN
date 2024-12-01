@@ -1,0 +1,1025 @@
+﻿@page "/home"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.SignalR.Client
+@using Microsoft.EntityFrameworkCore
+@using CSN.Models
+@using Radzen
+@using Radzen.Blazor
+@inject dbCSNChatContext dbcontext
+@inject NavigationManager Navigation
+@inject NotificationService NotificationService
+@inject IJSRuntime JS
+<PageTitle>C500 Social NetWork</PageTitle>
+
+<RadzenLayout Style="height:100%;">
+    <RadzenHeader Style="background: linear-gradient(to right, #54A2FF, #637CFF, #768BFF);">
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0" Style="width: 100%; position: relative;">
+            <!-- Left section: Sidebar toggle and Label -->
+            <div style="display: flex; align-items: center;">
+                <RadzenSidebarToggle Click="@(() => sidebarExpanded = !sidebarExpanded)" />               
+                <RadzenLabel Text="C500 Social NetWork" />
+            </div>
+            
+            <!-- Right section: Profile Menu, fixed to the right -->
+            <div style="position: absolute; right: 0; top: 50%; transform: translateY(-50%);">
+                <RadzenProfileMenu Style="background: linear-gradient(to right, #54A2FF, #637CFF, #768BFF);">
+                    <Template>
+                        <RadzenGravatar Email="user@example.com"></RadzenGravatar>
+                    </Template>
+                    <ChildContent>
+                        <RadzenProfileMenuItem Text="Thông tin" Path="buttons" Icon="account_circle"></RadzenProfileMenuItem>
+                        <RadzenProfileMenuItem Text="Menu" Path="menu" Icon="line_weight"></RadzenProfileMenuItem>
+                        <RadzenProfileMenuItem Text="FileInput" Path="fileinput" Icon="attach_file"></RadzenProfileMenuItem>
+                        <RadzenProfileMenuItem Text="Dialog" Path="dialog" Icon="perm_media"></RadzenProfileMenuItem>
+                        <RadzenProfileMenuItem Text="Notification" Path="notification" Icon="announcement"></RadzenProfileMenuItem>
+                    </ChildContent>
+                </RadzenProfileMenu>
+            </div>
+        </RadzenStack>
+    </RadzenHeader>
+
+
+
+    <RadzenSidebar Responsive="false" Style="width: max-content">
+        <RadzenPanelMenu DisplayStyle="@(sidebarExpanded ? MenuItemDisplayStyle.IconAndText : MenuItemDisplayStyle.Icon)" ShowArrow="false">
+            <RadzenPanelMenuItem Text="Home" Icon="home" Path="home" />
+
+            <RadzenPanelMenuItem Text="Phòng chat" Icon="chrome_reader_mode" Path="room" /> 
+
+            <RadzenPanelMenuItem Text="Bạn bè" Icon="assignment_ind">
+                <RadzenPanelMenuItem Text="Danh sách bạn bè" Path="friend" Icon="list" />
+                <RadzenPanelMenuItem Text="Thêm bạn bè" Path="friend" Icon="check_circle" />
+                <RadzenPanelMenuItem Text="Thông tin" Path="card" Icon="line_style" />
+            </RadzenPanelMenuItem>
+
+            <RadzenPanelMenuItem Text="Cloud" Icon="account_balance_wallet" Path="test">
+                <RadzenPanelMenuItem Text="Văn bản" Path="text" Icon="assignment" />
+                <RadzenPanelMenuItem Text="Ảnh" Path="panel" Icon="perm_media" />
+                <RadzenPanelMenuItem Text="File" Path="fieldset" Icon="attach_file" />
+            </RadzenPanelMenuItem>
+            <RadzenPanelMenuItem Text="Kế hoạch" Icon="assessment" Path="lich" />
+            <div class="rz-p-4" style="height: 450px;"></div> <!-- Tạo khoảng trống lớn hơn -->
+
+            <RadzenPanelMenuItem Text="Đăng xuất" Path="" Icon="exit_to_app" style="color: red !important;" />
+
+            <div class="rz-p-4" style="height: 50px;"></div>
+        </RadzenPanelMenu>
+    </RadzenSidebar>
+
+    <RadzenBody class="RadzenBody" Style="padding:0px; height: 100vh; overflow-y: auto;">
+        <!DOCTYPE html>
+        <html lang="en">
+
+        <head>
+            <!-- Basic -->
+            <meta charset="utf-8" />
+            <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+            <!-- Mobile Metas -->
+            <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+            <!-- Site Metas -->
+            <meta name="keywords" content="" />
+            <meta name="description" content="" />
+            <meta name="author" content="" />
+
+
+            <!-- bootstrap core css -->
+            <link rel="stylesheet" type="text/css" href="css/bootstrap.css" />
+
+            <!-- font awesome style -->
+            <link href="css/font-awesome.min.css" rel="stylesheet" />
+
+            <!-- Custom styles for this template -->
+            <link href="css/style.css" rel="stylesheet" />
+            <!-- responsive style -->
+            <link href="css/responsive.css" rel="stylesheet" />
+
+        </head>
+
+        <body>
+
+            <div class="hero_area">
+                <!-- header section strats -->
+                <header class="header_section">
+                    <div class="container-fluid">
+                        <nav class="navbar navbar-expand-lg custom_nav-container ">
+                            <a class="navbar-brand" href="home">
+                                <span>
+                                    C500CSN
+                                </span>
+                            </a>
+
+                            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                                <span class=""> </span>
+                            </button>
+
+                            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                                <ul class="navbar-nav  ">
+                                    <li class="nav-item active">
+                                        <a class="nav-link" href="home">Trang chủ</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" href="#features">Chức năng</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" href="#about">Về chúng tôi</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" href="#message">Thông điệp</a>
+                                    </li>
+                                   
+                                </ul>
+                                <div class="quote_btn-container">
+                                    <a href="" class="quote_btn">
+                                        Đăng xuất
+                                    </a>
+                                </div>
+                            </div>
+                        </nav>
+                    </div>
+                </header>
+                <!-- end header section -->
+                <!-- slider section -->
+                <section class="slider_section ">
+                    <div id="customCarousel1" class="carousel slide" data-ride="carousel">
+                        <div class="carousel-inner">
+                            <div class="carousel-item active">
+                                <div class="container ">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="img-box">
+                                                <img src="images/slider-img.png" alt="">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="detail-box">
+                                                <h1>
+                                                    C500 Social NetWork
+                                                </h1>
+                                                <p>
+                                                    "C500 Social Network - Ứng dụng chat tin nhắn thông minh, nơi cảm xúc được sẻ chia, câu chuyện được nối dài và mọi kết nối đều trở nên gần gũi hơn bao giờ hết!"
+                                                </p>
+                                                <div class="btn-box">
+                                                    <a href="room" class="btn1">
+                                                        Bắt đầu
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            </div>
+                        <ol class="carousel-indicators">
+                            <li data-target="#customCarousel1" data-slide-to="0" class="active"></li>
+                            <li data-target="#customCarousel1" data-slide-to="1"></li>
+                            <li data-target="#customCarousel1" data-slide-to="2"></li>
+                        </ol>
+                    </div>
+
+                </section>
+                <!-- end slider section -->
+            </div>
+
+            <!-- service section -->
+            <section id="features" class="service_section layout_padding">
+                <div class="container">
+                    <div class="heading_container">
+                        <h2>
+                            Chức năng
+                        </h2>
+                        <p>
+                            Một số chức năng của ứng dụng C500 Social NetWork!
+                        </p>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 col-lg-3">
+                            <div class="box">
+                                <div class="img-box">
+                                    <img src="images/s1.png" alt="">
+                                </div>
+                                <div class="detail-box">
+                                    <h5>
+                                        Link tham gia
+                                    </h5>
+                                    <p>
+                                       Giúp người dùng có thể tham gia vào cuộc trò chuyện bất cứ khi nào bạn muốn.
+                                    </p>
+                                    <a href="">
+                                        <span>
+                                            Read More
+                                        </span>
+                                        <i class="fa fa-long-arrow-right" aria-hidden="true"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <div class="box">
+                                <div class="img-box">
+                                    <img src="images/s2.png" alt="">
+                                </div>
+                                <div class="detail-box">
+                                    <h5>
+                                        Tương tác
+                                    </h5>
+                                    <p>
+                                        Tạo một xã hội gắn kết hơn thông qua sự tương tác của người dùng.
+                                    </p>
+                                    <a href="">
+                                        <span>
+                                            Read More
+                                        </span>
+                                        <i class="fa fa-long-arrow-right" aria-hidden="true"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <div class="box">
+                                <div class="img-box">
+                                    <img src="images/s3.png" alt="">
+                                </div>
+                                <div class="detail-box">
+                                    <h5>
+                                        Trò chuyện
+                                    </h5>
+                                    <p>
+                                        Tốc độ trò chuyện của cuộc hội thoại đem lại cảm giác thoải mái cho người dùng. 
+                                    </p>
+                                    <a href="">
+                                        <span>
+                                            Read More
+                                        </span>
+                                        <i class="fa fa-long-arrow-right" aria-hidden="true"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <div class="box">
+                                <div class="img-box">
+                                    <img src="images/s4.png" alt="">
+                                </div>
+                                <div class="detail-box">
+                                    <h5>
+                                        Bảo mật
+                                    </h5>
+                                    <p>
+                                        Thông tin cuộc trò chuyện của người dùng được bảo mật tuyệt đối.
+                                    </p>
+                                    <a href="">
+                                        <span>
+                                            Read More
+                                        </span>
+                                        <i class="fa fa-long-arrow-right" aria-hidden="true"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="btn-box">
+                        <a href="">
+                            View More
+                        </a>
+                    </div>
+                </div>
+            </section>
+            <!-- end service section -->
+            <!-- about section -->
+
+            <section id="about" class="about_section layout_padding">
+                <div class="container  ">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="detail-box">
+                                <div class="heading_container">
+                                    <h2>
+                                        Đôi chút về chúng tôi
+                                    </h2>
+                                </div>
+                                <p>
+                                    C500 Social Network là nền tảng chat tin nhắn tối ưu, giúp bạn kết nối và giao tiếp mọi lúc mọi nơi. Ứng dụng mang đến trải nghiệm nhắn tin nhanh chóng, chia sẻ hình ảnh tiện lợi và lưu giữ mọi khoảnh khắc ý nghĩa. Với giao diện thân thiện và tính năng hiện đại, chúng tôi đặt mục tiêu xây dựng một cộng đồng nơi mọi người có thể trò chuyện dễ dàng và gắn bó bền chặt. C500 không chỉ là một ứng dụng, mà còn là cầu nối cảm xúc, mở ra không gian giao tiếp không giới hạn cho tất cả mọi người. Hãy cùng chúng tôi xây dựng những mối quan hệ ý nghĩa và tận hưởng cảm giác gắn bó bất cứ lúc nào, bất cứ nơi đâu!
+                                </p>
+                                <a href="">
+                                    Read More
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-6 ">
+                            <div class="img-box">
+                                <img src="images/about-img.png" alt="">
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+
+            <!-- end about section -->
+            <!-- case section -->
+
+            <section id="message" class="case_section layout_padding">
+                <div class="container">
+                    <div class="heading_container">
+                        <h2>
+                           Đội ngũ thành viên 
+                        </h2>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="box">
+                                <div class="img-box">
+                                    <div id="slider-container">
+                                        <img id="slider-img" src="slider-img.png" alt="Moving Image" />
+                                    </div>
+
+                                </div>
+                                <div class="detail-box">
+                                    <h5>
+                                        Nghiêm túc, tư duy, sáng tạo
+                                    </h5>
+                                    <p>
+                                        Sự nghiêm túc, tập trung, sáng tạo được lên kế hoạch một cách chi tiết và tỉ mỉ mà chúng tôi muốn gửi gắm vào sản phẩm...
+                                    </p>
+                                    <a href="">
+                                        <span>
+                                            Read More
+                                        </span>
+                                        <i class="fa fa-long-arrow-right" aria-hidden="true"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="box">
+                                <div class="img-box">
+                                    <img src="images/case-2.jpg" alt="">
+                                </div>
+                                <div class="detail-box">
+                                    <h5>
+                                        Đoàn kết, tập trung vì một mục tiêu chung
+                                    </h5>
+                                    <p>
+                                        Đoàn kết, tập trung là thông điệp mà chúng tôi muốn gửi gắm vào sản phầm này...
+                                    </p>
+                                    <a href="">
+                                        <span>
+                                            Read More
+                                        </span>
+                                        <i class="fa fa-long-arrow-right" aria-hidden="true"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <script>
+                // Thêm cuộn mượt bằng JavaScript
+                document.querySelectorAll('a.nav-link').forEach(link => {
+                    link.addEventListener('click', function (e) {
+                        e.preventDefault(); // Ngăn hành động mặc định
+                        const targetId = this.getAttribute('href').substring(1); // Lấy id
+                        const targetElement = document.getElementById(targetId);
+
+                        targetElement.scrollIntoView({ behavior: 'smooth' }); // Cuộn mượt
+                    });
+                });
+            </script>
+        </body>
+
+    </html>
+    </RadzenBody>
+</RadzenLayout>
+
+<style>
+   *{
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        justify-content: center;
+   }
+
+    body {
+        font-family: "Poppins", sans-serif;
+        color: #0c0c0c;
+        background-color: #ffffff;
+        overflow-x: hidden;
+    }
+
+    .layout_padding {
+        padding: 90px 0;
+    }
+
+    .layout_margin {
+        margin: 90px 0;
+    }
+
+    .layout_padding2 {
+        padding: 75px 0;
+    }
+
+    .layout_padding2-top {
+        padding-top: 75px;
+    }
+
+    .layout_padding2-bottom {
+        padding-bottom: 75px;
+    }
+
+    .layout_padding-top {
+        padding-top: 90px;
+    }
+
+    .layout_padding-bottom {
+        padding-bottom: 90px;
+    }
+
+    .heading_container {
+        display: -webkit-box;
+        display: -ms-flexbox;
+        display: flex;
+        -webkit-box-orient: vertical;
+        -webkit-box-direction: normal;
+        -ms-flex-direction: column;
+        flex-direction: column;
+        -webkit-box-align: start;
+        -ms-flex-align: start;
+        align-items: flex-start;
+    }
+
+        .heading_container h2 {
+            position: relative;
+            font-weight: bold;
+        }
+
+            .heading_container h2 span {
+                color: #7335b7;
+            }
+
+        .heading_container.heading_center {
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            text-align: center;
+        }
+
+    a,
+    a:hover,
+    a:focus {
+        text-decoration: none;
+    }
+
+        a:hover,
+        a:focus {
+            color: initial;
+        }
+
+    .btn,
+    .btn:focus {
+        outline: none !important;
+        -webkit-box-shadow: none;
+        box-shadow: none;
+    }
+
+    /*header section*/
+    .hero_area {
+        position: relative;
+        min-height: 100vh;
+        display: -webkit-box;
+        display: -ms-flexbox;
+        display: flex;
+        -webkit-box-orient: vertical;
+        -webkit-box-direction: normal;
+        -ms-flex-direction: column;
+        flex-direction: column;
+        background-color: #7335b7;
+        border-radius: 0 0 350px 0;
+    }
+
+    .sub_page .hero_area {
+        min-height: auto;
+        border-radius: 0 0 45px 0;
+    }
+
+    .header_section {
+        padding: 15px 0;
+    }
+
+        .header_section .container-fluid {
+            padding-right: 25px;
+            padding-left: 25px;
+        }
+
+    .navbar-brand span {
+        font-weight: bold;
+        color: #ffffff;
+        font-size: 24px;
+    }
+
+    .custom_nav-container {
+        padding: 0;
+    }
+
+        .custom_nav-container .navbar-nav {
+            margin: auto;
+        }
+
+            .custom_nav-container .navbar-nav .nav-item .nav-link {
+                padding: 5px 25px;
+                color: #ffffff;
+                text-align: center;
+                text-transform: uppercase;
+                border-radius: 5px;
+                -webkit-transition: all 0.3s;
+                transition: all 0.3s;
+            }
+
+            .custom_nav-container .navbar-nav .nav-item:hover .nav-link, .custom_nav-container .navbar-nav .nav-item.active .nav-link {
+                color: #000000;
+                background-color: #ffffff;
+            }
+
+        .custom_nav-container .navbar-toggler {
+            outline: none;
+        }
+
+        .custom_nav-container .navbar-toggler {
+            padding: 0;
+            width: 37px;
+            height: 42px;
+            -webkit-transition: all 0.3s;
+            transition: all 0.3s;
+        }
+
+            .custom_nav-container .navbar-toggler span {
+                display: block;
+                width: 35px;
+                height: 4px;
+                background-color: #ffffff;
+                margin: 7px 0;
+                -webkit-transition: all 0.3s;
+                transition: all 0.3s;
+                position: relative;
+                border-radius: 5px;
+                transition: all 0.3s;
+            }
+
+                .custom_nav-container .navbar-toggler span::before, .custom_nav-container .navbar-toggler span::after {
+                    content: "";
+                    position: absolute;
+                    left: 0;
+                    height: 100%;
+                    width: 100%;
+                    background-color: #ffffff;
+                    top: -10px;
+                    border-radius: 5px;
+                    -webkit-transition: all 0.3s;
+                    transition: all 0.3s;
+                }
+
+                .custom_nav-container .navbar-toggler span::after {
+                    top: 10px;
+                }
+
+            .custom_nav-container .navbar-toggler[aria-expanded="true"] {
+                -webkit-transform: rotate(360deg);
+                transform: rotate(360deg);
+            }
+
+                .custom_nav-container .navbar-toggler[aria-expanded="true"] span {
+                    -webkit-transform: rotate(45deg);
+                    transform: rotate(45deg);
+                }
+
+                    .custom_nav-container .navbar-toggler[aria-expanded="true"] span::before, .custom_nav-container .navbar-toggler[aria-expanded="true"] span::after {
+                        -webkit-transform: rotate(90deg);
+                        transform: rotate(90deg);
+                        top: 0;
+                    }
+
+                .custom_nav-container .navbar-toggler[aria-expanded="true"] .s-1 {
+                    -webkit-transform: rotate(45deg);
+                    transform: rotate(45deg);
+                    margin: 0;
+                    margin-bottom: -4px;
+                }
+
+                .custom_nav-container .navbar-toggler[aria-expanded="true"] .s-2 {
+                    display: none;
+                }
+
+                .custom_nav-container .navbar-toggler[aria-expanded="true"] .s-3 {
+                    -webkit-transform: rotate(-45deg);
+                    transform: rotate(-45deg);
+                    margin: 0;
+                    margin-top: -4px;
+                }
+
+            .custom_nav-container .navbar-toggler[aria-expanded="false"] .s-1,
+            .custom_nav-container .navbar-toggler[aria-expanded="false"] .s-2,
+            .custom_nav-container .navbar-toggler[aria-expanded="false"] .s-3 {
+                -webkit-transform: none;
+                transform: none;
+            }
+
+    .quote_btn-container {
+        display: -webkit-box;
+        display: -ms-flexbox;
+        display: flex;
+        -webkit-box-align: center;
+        -ms-flex-align: center;
+        align-items: center;
+        
+    }
+
+        .quote_btn-container a {
+            color: #000000;
+            text-transform: uppercase;
+            text-decoration: none;
+        }
+
+            .quote_btn-container a span {
+                margin-left: 5px;
+            }
+
+            .quote_btn-container a:hover {
+                color: #f8842b;
+            }
+
+        .quote_btn-container .quote_btn {
+            display: inline-block;
+            padding: 5px 25px;
+            background-color: #f8842b;
+            color: #ffffff;
+            border-radius: 5px;
+            -webkit-transition: all 0.3s;
+            transition: all 0.3s;
+            border: 1px solid #f8842b;
+        }
+
+            .quote_btn-container .quote_btn:hover {
+                color: #ffffff;
+                -webkit-transform: translateY(-3px);
+                transform: translateY(-3px);
+            }
+
+        
+
+    /*end header section*/
+    /* slider section */
+    .slider_section {
+        -webkit-box-flex: 1;
+        -ms-flex: 1;
+        flex: 1;
+        display: -webkit-box;
+        display: -ms-flexbox;
+        display: flex;
+        -webkit-box-align: center;
+        -ms-flex-align: center;
+        align-items: center;
+        padding: 45px 0;
+    }
+
+        .slider_section .row {
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+        }
+
+        .slider_section #customCarousel1 {
+            width: 100%;
+            position: unset;
+        }
+
+        .slider_section .detail-box {
+            text-align: center;
+            color: #ffffff;
+        }
+
+            .slider_section .detail-box h1 {
+                font-weight: bold;
+                margin-bottom: 20px;
+            }
+
+            .slider_section .detail-box .btn-box {
+                display: -webkit-box;
+                display: -ms-flexbox;
+                display: flex;
+                -webkit-box-pack: center;
+                -ms-flex-pack: center;
+                justify-content: center;
+                margin: 0 -5px;
+                margin-top: 45px;
+            }
+
+                .slider_section .detail-box .btn-box a {
+                    margin: 5px;
+                    text-align: center;
+                    width: 185px;
+                }
+
+                .slider_section .detail-box .btn-box .btn1 {
+                    display: inline-block;
+                    padding: 12px 15px;
+                    background-color: #5a2a8f;
+                    color: #ffffff;
+                    border-radius: 5px;
+                    -webkit-transition: all 0.3s;
+                    transition: all 0.3s;
+                    border: 1px solid #5a2a8f;
+                }
+
+                    .slider_section .detail-box .btn-box .btn1:hover {
+                        color: #ffffff;
+                        -webkit-transform: translateY(-3px);
+                        transform: translateY(-3px);
+                    }
+
+        .slider_section .img-box img {
+            width: 100%;
+        }
+
+        .slider_section .carousel-indicators {
+            position: unset;
+            margin: 0;
+            -webkit-box-pack: center;
+            -ms-flex-pack: center;
+            justify-content: center;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            margin-top: 45px;
+        }
+
+            .slider_section .carousel-indicators li {
+                background-color: #ffffff;
+                width: 15px;
+                height: 15px;
+                border-radius: 100%;
+                opacity: 1;
+            }
+
+                .slider_section .carousel-indicators li.active {
+                    width: 23px;
+                    height: 23px;
+                    background-color: #f8842b;
+                }
+
+    .service_section {
+        text-align: center;
+    }
+
+        .service_section .heading_container {
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+        }
+
+        .service_section .box {
+            margin-top: 25px;
+            padding: 15px;
+            border-radius: 10px;
+            -webkit-box-shadow: 0 0 5px 0 rgba(0, 0, 0, 0.25);
+            box-shadow: 0 0 5px 0 rgba(0, 0, 0, 0.25);
+            position: relative;
+            overflow: hidden;
+            -webkit-transition: all 0.3s;
+            transition: all 0.3s;
+        }
+
+            .service_section .box::before {
+                content: "";
+                width: 275px;
+                height: 275px;
+                position: absolute;
+                right: -137.5px;
+                bottom: -137.5px;
+                background-color: #faf8fd;
+                z-index: -1;
+                border-radius: 100%;
+                -webkit-transition: all 0.3s;
+                transition: all 0.3s;
+            }
+
+            .service_section .box .img-box {
+                display: -webkit-box;
+                display: -ms-flexbox;
+                display: flex;
+                -webkit-box-pack: center;
+                -ms-flex-pack: center;
+                justify-content: center;
+                -webkit-box-align: center;
+                -ms-flex-align: center;
+                align-items: center;
+                height: 125px;
+                border-radius: 15px;
+                -webkit-transition: all 0.3s;
+                transition: all 0.3s;
+            }
+
+                .service_section .box .img-box img {
+                    width: 75px;
+                    -webkit-transition: all 0.3s;
+                    transition: all 0.3s;
+                }
+
+            .service_section .box .detail-box {
+                margin-top: 15px;
+            }
+
+                .service_section .box .detail-box h5 {
+                    font-weight: bold;
+                    position: relative;
+                }
+
+                .service_section .box .detail-box a {
+                    color: inherit;
+                }
+
+            .service_section .box:hover {
+                color: #ffffff;
+            }
+
+                .service_section .box:hover::before {
+                    -webkit-transform: scale(5);
+                    transform: scale(5);
+                    background-color: #7335b7;
+                }
+
+                .service_section .box:hover img {
+                    -webkit-filter: invert(1);
+                    filter: invert(1);
+                }
+
+        .service_section .btn-box {
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-pack: center;
+            -ms-flex-pack: center;
+            justify-content: center;
+            margin-top: 45px;
+        }
+
+            .service_section .btn-box a {
+                display: inline-block;
+                padding: 10px 45px;
+                background-color: #7335b7;
+                color: #ffffff;
+                border-radius: 5px;
+                -webkit-transition: all 0.3s;
+                transition: all 0.3s;
+                border: 1px solid #7335b7;
+            }
+
+                .service_section .btn-box a:hover {
+                    color: #ffffff;
+                    -webkit-transform: translateY(-3px);
+                    transform: translateY(-3px);
+                }
+
+    .about_section {
+        background-color: #7335b7;
+        color: #ffffff;
+        border-radius: 250px 0 250px 0;
+    }
+
+        .about_section .row {
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+        }
+
+        .about_section .img-box {
+            position: relative;
+        }
+
+            .about_section .img-box img {
+                width: 100%;
+            }
+
+        .about_section .detail-box p {
+            margin-top: 15px;
+        }
+
+        .about_section .detail-box a {
+            display: inline-block;
+            padding: 10px 45px;
+            background-color: #f8842b;
+            color: #ffffff;
+            border-radius: 5px;
+            -webkit-transition: all 0.3s;
+            transition: all 0.3s;
+            border: 1px solid #f8842b;
+            margin-top: 15px;
+        }
+
+            .about_section .detail-box a:hover {
+                color: #ffffff;
+                -webkit-transform: translateY(-3px);
+                transform: translateY(-3px);
+            }
+
+    .case_section .heading_container {
+        -webkit-box-align: center;
+        -ms-flex-align: center;
+        align-items: center;
+    }
+
+        .case_section .heading_container h2::before {
+            left: 50%;
+            -webkit-transform: translateX(-50%);
+            transform: translateX(-50%);
+        }
+
+    .case_section .box {
+        margin-top: 45px;
+        background-color: #ffffff;
+        -webkit-box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.15);
+        box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.15);
+        text-align: center;
+    }
+
+        .case_section .box .img-box {
+            position: relative;
+        }
+
+            .case_section .box .img-box img {
+                width: 100%;
+            }
+
+        .case_section .box .detail-box {
+            padding: 25px;
+        }
+
+            .case_section .box .detail-box h5 {
+                font-weight: bold;
+            }
+
+            .case_section .box .detail-box p {
+                font-size: 15px;
+            }
+
+            .case_section .box .detail-box a {
+                color: #7335b7;
+            }
+
+    .RadzenBody::-webkit-scrollbar {
+        width: 5px; /* Độ rộng của thanh cuộn */
+    }
+
+    .RadzenBody::-webkit-scrollbar-track {
+        background: #7335b7; /* Màu nền của track */
+        border-radius: 10px; /* Bo góc */
+    }
+
+    .RadzenBody::-webkit-scrollbar-thumb {
+        background: #f8842b; /* Màu của thanh kéo */
+        border-radius: 10px; /* Bo góc */
+    }
+
+        .RadzenBody::-webkit-scrollbar-thumb:hover {
+            background: #f8842b; /* Màu khi hover */
+        }
+
+    #slider-container {
+        position: relative;
+        height: 400px; /* Chiều cao khung chứa */
+        overflow: hidden; /* Ẩn phần hình ảnh tràn ra ngoài */
+    }
+
+    #slider-img {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        transition: top 0.5s ease-in-out; /* Hiệu ứng chuyển động mượt */
+    }
+
+</style>
+<script>
+        let sliderImage = document.getElementById("slider-img");
+    let direction = 1; // 1: di chuyển xuống, -1: di chuyển lên
+    let position = 0; // Vị trí ban đầu
+
+    function slideImage() {
+        position += direction * 5; // Thay đổi vị trí
+        sliderImage.style.top = position + "px"; // Cập nhật vị trí top của hình ảnh
+
+        // Đổi hướng khi chạm vào mép khung
+        if (position >= 300 || position <= 0) {
+            direction *= -1;
+        }
+
+        requestAnimationFrame(slideImage); // Lặp lại liên tục
+    }
+
+    // Khởi động chuyển động
+    slideImage();
+</script>
+@code {
+    // Biến xác định sidebar mở hay thu
+    bool sidebarExpanded = false;
+}

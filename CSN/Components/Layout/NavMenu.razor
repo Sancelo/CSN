@@ -1,0 +1,50 @@
+﻿@* @using CSN.Models
+@using Radzen
+@using Radzen.Blazor
+@inject dbCSNChatContext dbcontext
+@inject NavigationManager Navigation
+@inject NotificationService NotificationService
+
+<RadzenLayout Style="height:100%;">
+    <RadzenHeader Style="background: linear-gradient(to right, #54A2FF, #637CFF, #768BFF);">
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0" >
+            <RadzenSidebarToggle Click="@(() => sidebarExpanded = !sidebarExpanded)" />
+            <RadzenLabel Text="C500 Social NetWork" />
+        </RadzenStack>
+    </RadzenHeader>
+    <RadzenSidebar Responsive="false" Style="width: 250px; transition: width 0.3s;">
+        <RadzenPanelMenu DisplayStyle="@(sidebarExpanded ? MenuItemDisplayStyle.IconAndText : MenuItemDisplayStyle.Icon)" ShowArrow="false">
+            <RadzenPanelMenuItem Text="Home" Icon="home" Path="home" />
+            <RadzenPanelMenuItem Text="Phòng chat" Icon="chrome_reader_mode" Path="room" />
+            <RadzenPanelMenuItem Text="Bạn bè" Icon="assignment_ind">
+                <RadzenPanelMenuItem Text="Danh sách bạn bè" Path="friend" Icon="list" />
+                <RadzenPanelMenuItem Text="Thêm bạn bè" Path="friend" Icon="check_circle" />
+                <RadzenPanelMenuItem Text="Thông tin" Path="card" Icon="line_style" />
+            </RadzenPanelMenuItem>
+            <RadzenPanelMenuItem Text="Cloud" Icon="account_balance_wallet">
+                <RadzenPanelMenuItem Text="Văn bản" Path="text" Icon="assignment" />
+                <RadzenPanelMenuItem Text="Ảnh" Path="panel" Icon="perm_media" />
+                <RadzenPanelMenuItem Text="File" Path="fieldset" Icon="attach_file" />
+            </RadzenPanelMenuItem>
+            <div class="rz-p-4" style="height: 450px;"></div>
+            <RadzenPanelMenuItem Text="Đăng xuất" Path="" Icon="exit_to_app" style="color: red !important;" />
+            <div class="rz-p-4" style="height: 50px;"></div>
+        </RadzenPanelMenu>
+    </RadzenSidebar>
+
+   
+
+    <RadzenBody>
+       
+
+
+    </RadzenBody>
+</RadzenLayout>
+
+
+@code {
+    // Biến xác định sidebar mở hay thu
+    bool sidebarExpanded = true;
+
+}
+ *@
