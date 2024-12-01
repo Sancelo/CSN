@@ -1,0 +1,227 @@
+﻿@page "/"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.SignalR.Client
+@using Microsoft.EntityFrameworkCore
+@using CSN.Models
+@using Radzen
+@using Radzen.Blazor
+@inject dbCSNChatContext dbcontext
+@inject NavigationManager Navigation
+@implements IAsyncDisposable
+@inject NotificationService NotificationService
+
+<PageTitle>Chat</PageTitle>
+
+<div class="other-user"></div>
+
+<RadzenCard class="chat-container rz-my-12 rz-mx-auto rz-p-4 rz-p-md-12">
+    <div class="message-list">
+        @foreach (var message in tinnhans)
+        {
+            <div class="@((message.User == tinnhan.User) ? "my-message" : "other-message")">
+                <div class="message-bubble">
+                    <span class="message-text"><b>@message.User</b>: @message.Content</span>
+                </div>
+            </div>
+        }
+    </div>
+</RadzenCard>
+
+<div class="chat-input">
+    <input @bind="tinnhan.User" placeholder="Tên của bạn..." class="user-input" />
+    <input @bind="tinnhan.Content" placeholder="Nhập tin nhắn..." class="message-input" />
+    <button type="submit" @onclick="Send" disabled="@(!IsConnected)" class="send-button">Gửi</button>
+</div>
+
+<style>
+    /* Toàn bộ giao diện chat */
+    .chat-container {
+        width: 100%;
+        height: 650px;
+        border-radius: 20px;
+        background: linear-gradient(145deg, #ffffff, #f0f0f0);
+        box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.1), -5px -5px 15px rgba(255, 255, 255, 0.9);
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Danh sách tin nhắn */
+    .message-list {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding: 20px;
+    }
+
+    /* Tin nhắn của người dùng (căn phải) */
+    .my-message {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 15px;
+    }
+
+        .my-message .message-bubble {
+            background-color: #A7C7E7; /* Màu xanh biển nhạt */
+            color: #333;
+            padding: 12px;
+            border-radius: 20px;
+            max-width: 70%;
+            box-shadow: 0px 3px 6px rgba(0, 0, 0, 0.2);
+            font-size: 0.9rem;
+            word-wrap: break-word;
+            word-break: break-word;
+        }
+
+    /* Tin nhắn của người khác (căn trái) */
+    .other-message {
+        display: flex;
+        justify-content: flex-start;
+        margin-bottom: 15px;
+    }
+
+        .other-message .message-bubble {
+            background-color: #E6E6E6; /* Màu xám trắng */
+            color: #333;
+            padding: 12px;
+            border-radius: 20px;
+            max-width: 70%;
+            box-shadow: 0px 3px 6px rgba(0, 0, 0, 0.1);
+            font-size: 0.9rem;
+            word-wrap: break-word;
+            word-break: break-word;
+        }
+
+    /* Hộp nhập tin nhắn */
+    .chat-input {
+        display: flex;
+        gap: 10px;
+        padding: 15px;
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .user-input, .message-input {
+        flex: 1;
+        padding: 10px 15px;
+        border: none;
+        border-radius: 15px;
+        background: #f8f8f8;
+        box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.1), inset -2px -2px 5px rgba(255, 255, 255, 0.7);
+        font-size: 0.9rem;
+    }
+
+    .user-input {
+        max-width: 20%;
+    }
+
+    .send-button {
+        background: linear-gradient(145deg, #007bff, #0056d2);
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 15px;
+        cursor: pointer;
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        transition: background 0.3s ease, transform 0.2s ease;
+    }
+
+        .send-button:hover {
+            background: linear-gradient(145deg, #0056d2, #007bff);
+            transform: translateY(-2px);
+        }
+
+        .send-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+    /* Cuộn mượt */
+    .message-list {
+        scrollbar-width: thin;
+        scrollbar-color: #007bff #f0f0f0;
+    }
+
+        .message-list::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .message-list::-webkit-scrollbar-thumb {
+            background-color: #007bff;
+            border-radius: 10px;
+        }
+</style>
+
+
+@code {
+    private HubConnection? hubConnection;
+    private List<string> messages = [];
+    private string? User;
+    private string? Content;
+    tbMsg tinnhan = new tbMsg();
+    RadzenDataGrid<tbMsg> tinnhansGrid;
+    private List<tbMsg> tinnhans = new List<tbMsg>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/chathub"))
+            .Build();
+
+        hubConnection.On<string, string>("ReceiveMessage", async (user, message) =>
+        {
+            // Chỉ hiển thị tin nhắn mà không cần thêm vào cơ sở dữ liệu
+            var newMessage = new tbMsg { User = user, Content = message };
+            tinnhans.Add(newMessage);
+            await InvokeAsync(StateHasChanged);
+        });
+
+        await hubConnection.StartAsync();
+
+        // Tải tin nhắn từ cơ sở dữ liệu khi khởi tạo
+        tinnhans = await dbcontext.tbMsgs.ToListAsync();
+    }
+
+    private async Task Send()
+    {
+        if (hubConnection is not null)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(tinnhan.User) || string.IsNullOrWhiteSpace(tinnhan.Content))
+                {
+                    NotificationService.Notify(NotificationSeverity.Error, "Thông báo", "Tên và nội dung không thể để trống!");
+                    return;
+                }
+
+                // Gửi tin nhắn qua SignalR
+                await hubConnection.SendAsync("SendMessage", tinnhan.User, tinnhan.Content);
+
+                // Lưu tin nhắn vào cơ sở dữ liệu chỉ khi gửi
+                var newMessage = new tbMsg { User = tinnhan.User, Content = tinnhan.Content };
+                tinnhans.Add(newMessage); // Thêm vào danh sách hiển thị
+                dbcontext.tbMsgs.Add(newMessage); // Thêm vào cơ sở dữ liệu
+                await dbcontext.SaveChangesAsync();
+
+                // Chỉ reset nội dung sau khi gửi thành công
+                tinnhan.Content = string.Empty;
+            }
+            catch (Exception ex)
+            {
+                var innerExceptionMessage = ex.InnerException?.Message ?? "Không có thông tin lỗi cụ thể.";
+                NotificationService.Notify(NotificationSeverity.Error, "Lỗi", $"Đã có lỗi xảy ra: {ex.Message}. Inner Exception: {innerExceptionMessage}");
+            }
+        }
+    }
+
+    public bool IsConnected =>
+        hubConnection?.State == HubConnectionState.Connected;
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+}
+
