@@ -1,0 +1,31 @@
+﻿* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    justify-content: center;
+}
+
+body {
+    background-color: white;
+}
+
+header {
+    background-color: white;
+    display: flex;
+    justify-content: space-between;
+    padding: 0; /* Đảm bảo header không có padding gây khoảng cách */
+    box-sizing: border-box;
+}
+
+.a1{
+    color:red;
+    margin:10px;
+    padding:20px;
+    border:2px solid red;
+}
+.a2{
+    font-size:20px;
+}
+.a3{
+    color:blue;
+}

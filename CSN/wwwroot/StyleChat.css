@@ -1,0 +1,247 @@
+﻿
+.revoke-button {
+    background: transparent;
+    border: none;
+    color: orange;
+    font-size: 0.8rem;
+    margin-left: 10px;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.revoke-button:hover {
+    color: darkorange;
+}
+
+.text-muted {
+    color: gray;
+    font-style: italic;
+}
+
+.message-timestamp {
+    font-size: 14px;
+}
+
+.room-item {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 50px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    background-color: transparent;
+    transition: background-color 0.2s ease-in-out;
+}
+
+    .room-item:hover {
+        background-color: #f0f0f0;
+    }
+
+    .room-item:active {
+        background-color: #dcdcdc;
+    }
+/* Định dạng các phần tử trong giao diện */
+.room-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background-color: white;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 5px;
+}
+
+.back-icon {
+    font-size: 1.5rem;
+    color: #007bff;
+    cursor: pointer;
+    transition: color 0.2s ease-in-out, transform 0.2s ease-in-out;
+}
+
+.room-title {
+    flex-grow: 1;
+    font-size: 1rem;
+    margin: 0;
+}
+
+.active-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-left: 5px;
+}
+
+.chat-container {
+    width: 100%;
+    height: 580px;
+    border-radius: 5px;
+    background: linear-gradient(to bottom, #C3C7F4, #C8A8E9, #E3AADD, #FBBCBA, #F2DDDC, #F4E7EB);
+    display: flex;
+    flex-direction: column;
+}
+
+.message-list {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.my-message {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 8px;
+}
+
+.other-message {
+    display: flex;
+    justify-content: flex-start;
+    margin-bottom: 8px;
+}
+
+.message-bubble {
+    padding: 10px;
+    border-radius: 15px;
+    max-width: 70%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.my-message .message-bubble {
+    background-color: #a7c7e7;
+    color: #333;
+}
+
+.other-message .message-bubble {
+    background-color: #e6e6e6;
+    color: #333;
+}
+
+.icon-menu {
+    margin-top: 3px;
+    margin-bottom: 3px;
+}
+
+.icon-container {
+    display: flex;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 10px;
+    background-color: white;
+    border-radius: 15px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.send-button {
+    background-color: #007bff;
+    color: white;
+    padding: 6px;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.2s ease-in-out, transform 0.2s ease-in-out;
+}
+
+    .send-button:hover {
+        background-color: #0056d2;
+        transform: scale(1.1);
+    }
+
+.chat-input {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding: 10px;
+    background-color: #fff;
+    border: 1px solid #007bff;
+    border-radius: 15px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.user-input, .message-input {
+    flex: 1;
+    padding: 8px;
+    border-radius: 15px;
+    border: 1px solid #007bff;
+    outline: none;
+}
+
+.create-room-box {
+    position: fixed; /* Đảm bảo hộp được cố định trên màn hình */
+    top: 50%; /* Căn giữa theo chiều dọc */
+    left: 50%; /* Căn giữa theo chiều ngang */
+    transform: translate(-50%, -50%); /* Đẩy hộp vào đúng trung tâm màn hình */
+    background-color: #ffffff; /* Màu nền trắng */
+    padding: 30px; /* Khoảng cách bên trong hộp */
+    border-radius: 12px; /* Bo tròn góc mềm mại */
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Bóng đổ mờ cho hộp */
+    z-index: 1000; /* Đảm bảo hộp nổi lên trên các phần tử khác */
+    width: 400px; /* Chiều rộng hộp lớn hơn */
+    max-width: 80%; /* Đảm bảo không quá rộng khi màn hình nhỏ */
+    box-sizing: border-box; /* Đảm bảo padding không làm thay đổi kích thước hộp */
+    transition: transform 0.3s ease-in-out; /* Thêm hiệu ứng khi hộp xuất hiện */
+}
+
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Nền mờ */
+    z-index: 999; /* Đặt lớp nền mờ phía dưới hộp */
+    transition: opacity 0.3s ease-in-out; /* Hiệu ứng mờ nền */
+}
+
+.create-room-box button {
+    background-color: #4CAF50; /* Màu nền xanh lá */
+    color: white; /* Chữ trắng */
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s ease; /* Hiệu ứng chuyển màu khi hover */
+}
+
+    .create-room-box button:hover {
+        background-color: #45a049; /* Màu khi hover */
+    }
+
+.room-options {
+    position: relative; /* Đặt vị trí tương đối cho div chứa icon và box */
+}
+
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+}
+
+.password-box {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    z-index: 1100;
+}
+
+    .password-box h3 {
+        margin-bottom: 15px;
+    }
+
+

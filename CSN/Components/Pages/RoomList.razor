@@ -9,6 +9,7 @@
 @inject IJSRuntime JS
 @implements IAsyncDisposable
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+<link href="StyleRoomList.css" rel="stylesheet" />
 <PageTitle>Danh sách phòng</PageTitle>
 
 <RadzenLayout>
@@ -199,177 +200,12 @@
                 </div>
             </div>
         
-            <style>
-                .carousel {
-                    height: 500px;
-                    position: relative;
-                }
-
-                .carousel-inner img {
-                    width: 100%;
-                    max-height: 400px;
-                    object-fit: contain;
-                    margin: 0 auto;
-                }
-
-                /* Đổi màu nút Previous và Next */
-                .carousel-control-prev-icon,
-                .carousel-control-next-icon {
-                    background-color: #1e90ff; /* Màu xanh nước biển */
-                    border-radius: 50%; /* Tạo hình tròn */
-                    width: 50px !important;
-                    height: 50px !important;
-                    background-size: 30px 30px !important; /* Điều chỉnh kích thước icon bên trong nút */
-                }
-
-                    .carousel-control-prev-icon:hover,
-                    .carousel-control-next-icon:hover {
-                        background-color: #4682b4; /* Màu xanh đậm khi hover */
-                    }
-
-                .carousel-control-prev,
-                .carousel-control-next {
-                    width: 4% !important; /* Điều chỉnh khoảng cách giữa các nút và carousel */
-                    margin-top: 0; /* Đảm bảo nút ở vị trí chính giữa theo chiều dọc */
-                }
-
-                .carousel-indicators button {
-                    background-color: #1e90ff !important; /* Màu xanh nước biển cho các dấu gạch dưới */
-                }
-
-                    .carousel-indicators button:hover {
-                        background-color: #4682b4 !important; /* Màu xanh đậm khi hover */
-                    }
-
-                .carousel-indicators .active {
-                    background-color: #ff5733 !important; /* Màu chữ khi dấu gạch dưới đang được chọn */
-                }
-
-                .carousel-indicators {
-                    position: absolute;
-                    bottom: 20px;
-                }
-            </style>
+          
         </div>
     </RadzenBody>
 </RadzenLayout>
 
-<style>
-    .room-item {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 50px;
-        cursor: pointer;
-        font-size: 16px;
-        font-weight: 500;
-        background-color: transparent;
-        transition: background-color 0.2s ease-in-out;
-    }
 
-        .room-item:hover {
-            background-color: #f0f0f0;
-        }
-
-        .room-item:active {
-            background-color: #dcdcdc;
-        }
-    /* Định dạng các phần tử trong giao diện */
-    .room-header {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        background-color: white;
-        padding: 10px;
-        border-radius: 5px;
-        margin-bottom: 5px;
-    }
-
-    .active-dot {
-        display: inline-block;
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        margin-left: 5px;
-    }
-
-    .chat-container {
-        width: 100%;
-        height: 580px;
-        border-radius: 5px;
-        background: linear-gradient(to bottom, #C3C7F4, #C8A8E9, #E3AADD, #FBBCBA, #F2DDDC, #F4E7EB);
-        display: flex;
-        flex-direction: column;
-    }
-
-    .create-room-box {
-        position: fixed; /* Đảm bảo hộp được cố định trên màn hình */
-        top: 50%; /* Căn giữa theo chiều dọc */
-        left: 50%; /* Căn giữa theo chiều ngang */
-        transform: translate(-50%, -50%); /* Đẩy hộp vào đúng trung tâm màn hình */
-        background-color: #ffffff; /* Màu nền trắng */
-        padding: 30px; /* Khoảng cách bên trong hộp */
-        border-radius: 12px; /* Bo tròn góc mềm mại */
-        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Bóng đổ mờ cho hộp */
-        z-index: 1000; /* Đảm bảo hộp nổi lên trên các phần tử khác */
-        width: 400px; /* Chiều rộng hộp lớn hơn */
-        max-width: 80%; /* Đảm bảo không quá rộng khi màn hình nhỏ */
-        box-sizing: border-box; /* Đảm bảo padding không làm thay đổi kích thước hộp */
-        transition: transform 0.3s ease-in-out; /* Thêm hiệu ứng khi hộp xuất hiện */
-    }
-
-    .overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5); /* Nền mờ */
-        z-index: 999; /* Đặt lớp nền mờ phía dưới hộp */
-        transition: opacity 0.3s ease-in-out; /* Hiệu ứng mờ nền */
-    }
-
-    .create-room-box button {
-        background-color: #4CAF50; /* Màu nền xanh lá */
-        color: white; /* Chữ trắng */
-        padding: 10px 20px;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 16px;
-        transition: background-color 0.3s ease; /* Hiệu ứng chuyển màu khi hover */
-    }
-
-        .create-room-box button:hover {
-            background-color: #45a049; /* Màu khi hover */
-        }
-
-    .overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: 1000;
-    }
-
-    .password-box {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: white;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
-        z-index: 1100;
-    }
-
-        .password-box h3 {
-            margin-bottom: 15px;
-        }
-</style>
 
 @code {
     private HubConnection? hubConnection;
